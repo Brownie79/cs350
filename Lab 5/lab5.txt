@@ -1,0 +1,43 @@
+CS 350
+CS 350 
+Dev Bharel
+Lab 5
+
+
+
+1. Assign pointers to integers
+// 1. C declarations
+	int *p, *q, *r = NULL;
+	int b[4] = {2,4,2,8};
+	
+	p = &b[0];
+	q = &b[1];
+	r = &b[2];
+
+2. Do the expressions evaluate to true/false or cause errors
+	a. p<q<r
+	-Compile Errors: 
+	-warning: comparison between pointer and integers
+	-warning: comparisons like “X<=Y<=Z” do not have their mathematical meaning
+
+	-Run-Time: prints “True”
+	
+	b. p != r && *p == *r
+	-Compile: No errors
+	-Runtime: True
+
+	c. q-b == &b[3] - &p[1] 
+	-Compile: No errors
+	-Runtime: False
+
+	d. p[1] == r[-1]
+	-Compile: No errors
+	-Runtime: True	
+
+	e. &r[-2] == &b[0]
+	-Compile: No errors
+	-Runtime: True
+
+	f. q-p+q-p == q+q-p-p
+	-Compile:
+	Error: invalid operands to binary + (have ‘int *’ and ‘int *’)
