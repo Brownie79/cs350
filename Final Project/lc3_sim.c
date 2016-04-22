@@ -32,8 +32,7 @@
 	void dump_cpu(CPU *cpu);
 	void dump_memory(CPU *cpu);
 	void dump_registers(CPU *cpu);
-	void get_asm(Word val);
-	const char *byte_to_binary(int x);
+
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 1\n");
@@ -143,20 +142,3 @@ void dump_registers(CPU *cpu){
 }
 
 
-void get_asm(Word val){
-	//char *p; //pointer to string that holds asm instruction
-	char a[] = "%X",val;
-	printf("asm: %s\n", a);
-}
-
-const char *byte_to_binary(int x){
-    static char b[9];
-    b[0] = '\0';
-
-    int z;
-    for (z = 128; z > 0; z >>= 1){
-        strcat(b, ((x & z) == z) ? "1" : "0");
-    }
-
-    return b;
-}
