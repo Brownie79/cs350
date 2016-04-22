@@ -35,7 +35,9 @@
 //phase2
 	int get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
-	int get_bits(Word val, int leftBit, int rightBit);
+	int get_bits(Word val, int leftBit, int rightBit, int mask);
+	void asm_printer(Word val);
+	int getNumber(Word val, int offsetSize);
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 1\n");
@@ -124,11 +126,11 @@ int get_nBit(Word val, int nthBit){
 	return temp;
 }
 
-int get_bits(Word val, int leftBit, int rightBit){
+int get_bits(Word val, int leftBit, int rightBit, int mask){
 	int leftPad = 15 - leftBit;
 	Word temp = val << leftPad;
 	temp = val >> (leftPad + rightBit);
-	temp = temp & 0x000F;
+	temp = temp & mask;
 	return temp;	
 }
 
@@ -140,13 +142,82 @@ void printBinary(Word val){
 	printf("\n");
 }
 
+void asm_printer(Word val){
+	int op_code = get_bits(val,15,12, 0x000F);
+	switch(op_code){
+		case 0x0: //BR or NOP
+			break;
+		case 0x1: //ADD or ADD
+			printf("ADD ");
+			break;
+		case 0x2: //LD
+			printf("LD ");
+			break;
+		case 0x3: //ST
+			printf("ST ");
+			break;
+		case 0x4: //JSR or JSRR
+			break;
+		case 0x5: //AND or AND
+			printf("AND ");
+			break;		
+		case 0x6: //LDR
+			printf("LDR ");
+			break;
+		case 0x7: //STR
+			printf("STR ");
+			break;
+		case 0x8: //RTI
+			printf("RTI ");
+			break;
+		case 0x9: //NOT
+			printf("NOT ");
+			break;
+		case 0xA: //LDI
+			printf("LDI ");
+			break;
+		case 0xB: //STI
+			printf("STI ");
+			break;
+		case 0xC: //JMP
+			printf("JMP ");
+			break;
+		case 0xD: //err
+			printf("ERROR CODE NOT IN USE");
+			break;
+		case 0xE: //LEA
+			printf("LEA ");
+			int dstReg = get_bits(val,11,9,0x7);
+			int offset = getNumber(val, 9);
+			printf("R%d, %d", dstReg, offset);
+			break;
+		case 0xF: //TRAP
+			printf("TRAP ");
+			break;
+		default:
+			printf("Not A Valid Fuction ");
+	}
+}
+
+int getNumber(Word val, int offsetSize){
+	Word num = val & 0x01FF; //bitstring of 8 bit number //returned as is if positive
+	if(get_nBit(val,(offsetSize - 1)) == 1) { //negative
+		//negate, add 1
+		num = ~num + 1;
+	}
+	return num;	
+}
+
 void dump_memory(CPU *cpu){
 	for(int i=0; i<=MEMLEN; i++){
 		if((*cpu).mem[i] != 0){
 			Word val = (*cpu).mem[i];
 			//printBinary(val); //works!
 			//printf("%x \n", get_bits(val,15,12)); // should be the leftmost 4 bits to give op_code
-			printf("@ %2d (%x) Value: %d\t%hx ASM: %s \n", i, i, val,val,"\tASM_Under_Construction");
+			
+			printf("@ %2d (%x) Value: %d\t%hx ASM: ", i, i, val,val);
+			asm_printer(val);
+			printf("\n");
 		}
 	}
 }
