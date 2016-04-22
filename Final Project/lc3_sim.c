@@ -35,9 +35,9 @@
 //phase2
 	int get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
-	int get_bits(Word val, int leftBit, int rightBit, int mask);
+	int get_bits(Word val, int leftBit, int rightBit);
 	void asm_printer(Word val);
-	int getNumber(Word val, int offsetSize);
+	int getOffset9(Word val);
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 1\n");
@@ -126,10 +126,22 @@ int get_nBit(Word val, int nthBit){
 	return temp;
 }
 
-int get_bits(Word val, int leftBit, int rightBit, int mask){
+int get_bits(Word val, int leftBit, int rightBit){
 	int leftPad = 15 - leftBit;
-	Word temp = val << leftPad;
+	int temp = val << leftPad;
 	temp = val >> (leftPad + rightBit);
+	//build mask
+	Word mask = 0x0;
+	switch(leftBit - rightBit){
+		case 3:
+			mask = 0x000F;
+			break;
+		case 2:
+			mask = 0x0007;
+		default:
+			break;
+	}
+			
 	temp = temp & mask;
 	return temp;	
 }
@@ -143,7 +155,11 @@ void printBinary(Word val){
 }
 
 void asm_printer(Word val){
-	int op_code = get_bits(val,15,12, 0x000F);
+	int op_code = get_bits(val,15,12);
+	int srcReg = 0;
+	int dstReg = 0;
+	int offset = 0;
+	
 	switch(op_code){
 		case 0x0: //BR or NOP
 			break;
@@ -152,9 +168,15 @@ void asm_printer(Word val){
 			break;
 		case 0x2: //LD
 			printf("LD ");
+			dstReg = get_bits(val,11,9);
+			offset = getOffset9(val);
+			printf("R%d, %d", dstReg, offset);
 			break;
 		case 0x3: //ST
 			printf("ST ");
+			srcReg = get_bits(val,11,9);
+			offset = getOffset9(val);
+			printf("R%d, %d", srcReg, offset);			
 			break;
 		case 0x4: //JSR or JSRR
 			break;
@@ -175,9 +197,15 @@ void asm_printer(Word val){
 			break;
 		case 0xA: //LDI
 			printf("LDI ");
+			dstReg = get_bits(val,11,9);
+			offset = getOffset9(val);
+			printf("R%d, %d", dstReg, offset);			
 			break;
 		case 0xB: //STI
 			printf("STI ");
+			srcReg = get_bits(val,11,9);
+			offset = getOffset9(val);
+			printf("R%d, %d", srcReg, offset);			
 			break;
 		case 0xC: //JMP
 			printf("JMP ");
@@ -187,8 +215,8 @@ void asm_printer(Word val){
 			break;
 		case 0xE: //LEA
 			printf("LEA ");
-			int dstReg = get_bits(val,11,9,0x7);
-			int offset = getNumber(val, 9);
+			dstReg = get_bits(val,11,9);
+			offset = getOffset9(val);
 			printf("R%d, %d", dstReg, offset);
 			break;
 		case 0xF: //TRAP
@@ -199,11 +227,13 @@ void asm_printer(Word val){
 	}
 }
 
-int getNumber(Word val, int offsetSize){
+int getOffset9(Word val){
 	Word num = val & 0x01FF; //bitstring of 8 bit number //returned as is if positive
-	if(get_nBit(val,(offsetSize - 1)) == 1) { //negative
+	if(get_nBit(val,8) == 1) { //check if 8th bit (9th digit) is 1, if so, num is negative
 		//negate, add 1
 		num = ~num + 1;
+		num = num & 0x01FF;
+		num = num * -1;
 	}
 	return num;	
 }
