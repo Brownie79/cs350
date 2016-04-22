@@ -35,6 +35,7 @@
 //phase2
 	int get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
+	int get_bits(Word val, int leftBit, int rightBit);
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 1\n");
@@ -123,6 +124,14 @@ int get_nBit(Word val, int nthBit){
 	return temp;
 }
 
+int get_bits(Word val, int leftBit, int rightBit){
+	int leftPad = 15 - leftBit;
+	Word temp = val << leftPad;
+	temp = val >> (leftPad + rightBit);
+	temp = temp & 0x000F;
+	return temp;	
+}
+
 void printBinary(Word val){
 	printf("\n");
 	for(int i = 15; i >= 0; i--){
@@ -136,6 +145,7 @@ void dump_memory(CPU *cpu){
 		if((*cpu).mem[i] != 0){
 			Word val = (*cpu).mem[i];
 			//printBinary(val); //works!
+			//printf("%x \n", get_bits(val,15,12)); // should be the leftmost 4 bits to give op_code
 			printf("@ %2d (%x) Value: %d\t%hx ASM: %s \n", i, i, val,val,"\tASM_Under_Construction");
 		}
 	}
