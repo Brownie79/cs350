@@ -32,7 +32,9 @@
 	void dump_cpu(CPU *cpu);
 	void dump_memory(CPU *cpu);
 	void dump_registers(CPU *cpu);
-
+//phase2
+	int get_nBit(Word val, int nthBit);
+	void printBinary(Word val);
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 1\n");
@@ -115,12 +117,26 @@ FILE *get_datafile(int argc,char *argv[]){
 	return datafile;
 }
 
+int get_nBit(Word val, int nthBit){
+	Word temp = val >> nthBit;
+	temp = temp & 0x0001;
+	return temp;
+}
+
+void printBinary(Word val){
+	printf("\n");
+	for(int i = 15; i >= 0; i--){
+		printf("%x", get_nBit(val,i));
+	}
+	printf("\n");
+}
+
 void dump_memory(CPU *cpu){
 	for(int i=0; i<=MEMLEN; i++){
 		if((*cpu).mem[i] != 0){
 			Word val = (*cpu).mem[i];
-			get_asm(val);
-			printf("@ %2d (%x) Value: %d\t%x ASM: %s \n", i, i, val,val,"\tASM_Under_Construction");
+			//printBinary(val); //works!
+			printf("@ %2d (%x) Value: %d\t%hx ASM: %s \n", i, i, val,val,"\tASM_Under_Construction");
 		}
 	}
 }
