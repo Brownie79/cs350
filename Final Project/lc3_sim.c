@@ -138,10 +138,11 @@ int get_bits(Word val, int leftBit, int rightBit){
 			break;
 		case 2:
 			mask = 0x0007;
+			break;
 		default:
+			printf("Case Not Covered!");
 			break;
 	}
-			
 	temp = temp & mask;
 	return temp;	
 }
@@ -159,9 +160,27 @@ void asm_printer(Word val){
 	int srcReg = 0;
 	int dstReg = 0;
 	int offset = 0;
-	
+	int n,z,p = 0;
 	switch(op_code){
 		case 0x0: //BR or NOP
+			n = get_nBit(val,11);
+			z = get_nBit(val,10);
+			p = get_nBit(val,9);	
+			if(n+z+p == 0){
+				//printf("NOP "); //never branch, don't print
+				break;
+			}
+			printf("BR");	
+			if(n == 1)
+				printf("N");
+			if(p == 1)
+				printf("Z");
+			if(z == 1)
+				printf("P");
+			printf(" "); //BRNZ_ (space where _ is)
+			
+			offset = getOffset9(val);
+			printf("%d", offset);									
 			break;
 		case 0x1: //ADD or ADD
 			printf("ADD ");
