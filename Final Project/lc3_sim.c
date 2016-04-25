@@ -129,31 +129,31 @@ int get_nBit(Word val, int nthBit){
 Word get_bits(Word val, Word leftBit, Word rightBit){
 	//printf("\nWord: %x, LeftBit: %d, RightBit: %d\n", val,leftBit,rightBit);
 	Word leftPad = 15 - leftBit;
-	//Word rightPad = leftPad + rightBit;
+	Word rightPad = leftPad + rightBit;
 	//printf("LeftPad: %d RightPad: %d\n", leftPad,rightPad);
 	//printf("Val   : "); printBinary(val);  printf("\n");
 	Word temp = val << leftPad;
 	//printf("Temp L: "); printBinary(temp); printf("\n");	
-	temp = val >> rightBit;
+	temp = temp >> rightPad;
 	//printf("Temp R: "); printBinary(temp); printf("\n");	
 
 	
 	//build mask
-	Word mask = 0x0;
-	switch(leftBit - rightBit){
-		case 3:
-			mask = 0x000F;
-			break;
-		case 2:
-			mask = 0x0007;
-			break;
-		default:
-			printf("Case Not Covered!");
-			break;
-	}
+	//Word mask = 0x0;
+	//switch(leftBit - rightBit){
+	//	case 3:
+	//		mask = 0x000F;
+	//		break;
+	//	case 2:
+	//		mask = 0x0007;
+	//		break;
+	//	default:
+	//		printf("Case Not Covered!");
+	//		break;
+	//}
 	//printf("Mask:   "); printBinary(mask); printf("\n");
-	temp = temp & mask;
-	return temp;	
+	//temp = temp & mask;
+	return temp; //no need for mask cause the entire value is only the bits we want	
 }
 
 void printBinary(Word val){
@@ -196,7 +196,8 @@ void asm_printer(Word val){
 			srcReg = get_bits(val,8,6);
 			printf("R%d, R%d, ", dstReg, srcReg);
 			if(get_nBit(val,5) == 1){
-				//immedate5
+				int isNeg = get_nBit(val,4);
+				Word immediateVal = get_bits(val,3,0);
 			} else {
 				printf("R%d", get_bits(val,2,0));
 			}
