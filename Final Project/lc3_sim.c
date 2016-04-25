@@ -35,12 +35,12 @@
 //phase2
 	int get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
-	int get_bits(Word val, int leftBit, int rightBit);
+	Word get_bits(Word val, Word leftBit, Word rightBit);
 	void asm_printer(Word val);
 	int getOffset9(Word val);
 
 int main(int argc, char *argv[]){
-	printf("LC3 Simulator Final Project pt 1\n");
+	printf("LC3 Simulator Final Project pt 2\n");
 	printf("Devanshu Bharel\n");
 	
 	CPU cpu_value, *cpu = &cpu_value;
@@ -126,10 +126,18 @@ int get_nBit(Word val, int nthBit){
 	return temp;
 }
 
-int get_bits(Word val, int leftBit, int rightBit){
-	int leftPad = 15 - leftBit;
-	int temp = val << leftPad;
-	temp = val >> (leftPad + rightBit);
+Word get_bits(Word val, Word leftBit, Word rightBit){
+	//printf("\nWord: %x, LeftBit: %d, RightBit: %d\n", val,leftBit,rightBit);
+	Word leftPad = 15 - leftBit;
+	//Word rightPad = leftPad + rightBit;
+	//printf("LeftPad: %d RightPad: %d\n", leftPad,rightPad);
+	//printf("Val   : "); printBinary(val);  printf("\n");
+	Word temp = val << leftPad;
+	//printf("Temp L: "); printBinary(temp); printf("\n");	
+	temp = val >> rightBit;
+	//printf("Temp R: "); printBinary(temp); printf("\n");	
+
+	
 	//build mask
 	Word mask = 0x0;
 	switch(leftBit - rightBit){
@@ -143,16 +151,15 @@ int get_bits(Word val, int leftBit, int rightBit){
 			printf("Case Not Covered!");
 			break;
 	}
+	//printf("Mask:   "); printBinary(mask); printf("\n");
 	temp = temp & mask;
 	return temp;	
 }
 
 void printBinary(Word val){
-	printf("\n");
 	for(int i = 15; i >= 0; i--){
 		printf("%x", get_nBit(val,i));
 	}
-	printf("\n");
 }
 
 void asm_printer(Word val){
@@ -161,6 +168,7 @@ void asm_printer(Word val){
 	int dstReg = 0;
 	int offset = 0;
 	int n,z,p = 0;
+	
 	switch(op_code){
 		case 0x0: //BR or NOP
 			n = get_nBit(val,11);
@@ -184,6 +192,15 @@ void asm_printer(Word val){
 			break;
 		case 0x1: //ADD or ADD
 			printf("ADD ");
+			dstReg = get_bits(val,11,9);
+			srcReg = get_bits(val,8,6);
+			printf("R%d, R%d, ", dstReg, srcReg);
+			if(get_nBit(val,5) == 1){
+				//immedate5
+			} else {
+				printf("R%d", get_bits(val,2,0));
+			}
+			
 			break;
 		case 0x2: //LD
 			printf("LD ");
