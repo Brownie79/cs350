@@ -36,10 +36,11 @@
 	Word get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
 	Word get_bits(Word val, Word leftBit, Word rightBit);
-	void asm_printer(Word val);
+	void asm_printer(Word val, Address memAddr);
 	Word getOffset9(Word val);
 	Word getImmediate5(Word val);
-
+	Word getOffset11(Word val);
+	
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 2\n");
 	printf("Devanshu Bharel\n");
@@ -149,7 +150,7 @@ void printBinary(Word val){
 	}
 }
 
-void asm_printer(Word val){
+void asm_printer(Word val, Address memAddr){
 	int op_code = get_bits(val,15,12);
 	int srcReg = 0;
 	int dstReg = 0;
@@ -157,7 +158,7 @@ void asm_printer(Word val){
 	int n,z,p = 0;
 	
 	switch(op_code){
-		case 0x0: //BR or NOP
+		case 0x0: //BR or NOP //done
 			n = get_nBit(val,11);
 			z = get_nBit(val,10);
 			p = get_nBit(val,9);	
@@ -177,7 +178,7 @@ void asm_printer(Word val){
 			offset = getOffset9(val);
 			printf("%d", offset);									
 			break;
-		case 0x1: //ADD or ADD
+		case 0x1: //ADD or ADD //done
 			printf("ADD ");
 			dstReg = get_bits(val,11,9);
 			srcReg = get_bits(val,8,6);
@@ -190,19 +191,27 @@ void asm_printer(Word val){
 			}
 			
 			break;
-		case 0x2: //LD
+		case 0x2: //LD //done
 			printf("LD ");
 			dstReg = get_bits(val,11,9);
 			offset = getOffset9(val);
 			printf("R%d, %d", dstReg, offset);
 			break;
-		case 0x3: //ST
+		case 0x3: //ST //done
 			printf("ST ");
 			srcReg = get_bits(val,11,9);
 			offset = getOffset9(val);
 			printf("R%d, %d", srcReg, offset);			
 			break;
-		case 0x4: //JSR or JSRR
+		case 0x4: //JSR or JSRR //done...
+			if(get_nBit(val,11) == 1){ //JSR 1 PCoffset11
+				Word offset = getOffset11(val);
+				Address newAddr = memAddr + offset + 1; //should wrap around if exceeds 65535?
+				printf("JSR M[0x%x]",newAddr);
+			} else { //JSRR 000 REG 000000
+				Word reg = get_bits(val,8,6);
+				printf("JSRR R%d",reg);
+			}			
 			break;
 		case 0x5: //AND or AND
 			printf("AND ");
@@ -219,31 +228,31 @@ void asm_printer(Word val){
 		case 0x9: //NOT
 			printf("NOT ");
 			break;
-		case 0xA: //LDI
+		case 0xA: //LDI //done
 			printf("LDI ");
 			dstReg = get_bits(val,11,9);
 			offset = getOffset9(val);
 			printf("R%d, %d", dstReg, offset);			
 			break;
-		case 0xB: //STI
+		case 0xB: //STI //done
 			printf("STI ");
 			srcReg = get_bits(val,11,9);
 			offset = getOffset9(val);
 			printf("R%d, %d", srcReg, offset);			
 			break;
-		case 0xC: //JMP
+		case 0xC: //JMP //done
 			printf("JMP ");
 			break;
-		case 0xD: //err
+		case 0xD: //err //done
 			printf("ERROR CODE NOT IN USE");
 			break;
-		case 0xE: //LEA
+		case 0xE: //LEA //done
 			printf("LEA ");
 			dstReg = get_bits(val,11,9);
 			offset = getOffset9(val);
 			printf("R%d, %d", dstReg, offset);
 			break;
-		case 0xF: //TRAP
+		case 0xF: //TRAP 
 			printf("TRAP ");
 			break;
 		default:
@@ -251,9 +260,20 @@ void asm_printer(Word val){
 	}
 }
 
+Word getOffset11(Word val){
+	Word num = val & 0x07FF;
+	if(get_nBit(val,10) == 1) { 
+		//negate, add 1
+		num = ~num + 1;
+		num = num & 0x07FF;
+		num = num * -1;
+	}
+	return num;
+}
+
 Word getOffset9(Word val){
-	Word num = val & 0x01FF; //bitstring of 8 bit number //returned as is if positive
-	if(get_nBit(val,8) == 1) { //check if 8th bit (9th digit) is 1, if so, num is negative
+	Word num = val & 0x01FF; 
+	if(get_nBit(val,8) == 1) { 
 		//negate, add 1
 		num = ~num + 1;
 		num = num & 0x01FF;
@@ -275,16 +295,14 @@ Word getImmediate5(Word val){
 }
 
 void dump_memory(CPU *cpu){
-	for(int i=0; i<=MEMLEN; i++){
+	for(Address i=0; i<=MEMLEN; i++){
 		if((*cpu).mem[i] != 0){
 			Word val = (*cpu).mem[i];
-			//printBinary(val); //works!
-			//printf("%x \n", get_bits(val,15,12)); // should be the leftmost 4 bits to give op_code
-			
 			printf("@ %2d (%x) Value: %d\t%hx ASM: ", i, i, val,val);
-			asm_printer(val);
+			asm_printer(val, i);
 			printf("\n");
 		}
+		if(i == MEMLEN){ break; }
 	}
 }
 
