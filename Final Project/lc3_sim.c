@@ -33,11 +33,12 @@
 	void dump_memory(CPU *cpu);
 	void dump_registers(CPU *cpu);
 //phase2
-	int get_nBit(Word val, int nthBit);
+	Word get_nBit(Word val, int nthBit);
 	void printBinary(Word val);
 	Word get_bits(Word val, Word leftBit, Word rightBit);
 	void asm_printer(Word val);
-	int getOffset9(Word val);
+	Word getOffset9(Word val);
+	Word getImmediate5(Word val);
 
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 2\n");
@@ -120,7 +121,7 @@ FILE *get_datafile(int argc,char *argv[]){
 	return datafile;
 }
 
-int get_nBit(Word val, int nthBit){
+Word get_nBit(Word val, int nthBit){
 	Word temp = val >> nthBit;
 	temp = temp & 0x0001;
 	return temp;
@@ -136,23 +137,9 @@ Word get_bits(Word val, Word leftBit, Word rightBit){
 	//printf("Temp L: "); printBinary(temp); printf("\n");	
 	temp = temp >> rightPad;
 	//printf("Temp R: "); printBinary(temp); printf("\n");	
-
-	
-	//build mask
-	//Word mask = 0x0;
-	//switch(leftBit - rightBit){
-	//	case 3:
-	//		mask = 0x000F;
-	//		break;
-	//	case 2:
-	//		mask = 0x0007;
-	//		break;
-	//	default:
-	//		printf("Case Not Covered!");
-	//		break;
-	//}
-	//printf("Mask:   "); printBinary(mask); printf("\n");
-	//temp = temp & mask;
+	if(temp < 0){
+		temp = temp*-1; //fix for when right shift fills with 1's instead of 0s
+	}
 	return temp; //no need for mask cause the entire value is only the bits we want	
 }
 
@@ -196,8 +183,8 @@ void asm_printer(Word val){
 			srcReg = get_bits(val,8,6);
 			printf("R%d, R%d, ", dstReg, srcReg);
 			if(get_nBit(val,5) == 1){
-				int isNeg = get_nBit(val,4);
-				Word immediateVal = get_bits(val,3,0);
+				Word immediateVal = getImmediate5(val);
+				printf("%d", immediateVal);
 			} else {
 				printf("R%d", get_bits(val,2,0));
 			}
@@ -264,12 +251,24 @@ void asm_printer(Word val){
 	}
 }
 
-int getOffset9(Word val){
+Word getOffset9(Word val){
 	Word num = val & 0x01FF; //bitstring of 8 bit number //returned as is if positive
 	if(get_nBit(val,8) == 1) { //check if 8th bit (9th digit) is 1, if so, num is negative
 		//negate, add 1
 		num = ~num + 1;
 		num = num & 0x01FF;
+		num = num * -1;
+	}
+	return num;	
+}
+
+Word getImmediate5(Word val){
+	Word num = val & 0x001F;
+	//val will have 5 digits, 5th one being the negative identified
+	if(get_nBit(val,4) == 1) { //check if 8th bit (9th digit) is 1, if so, num is negative
+		//negate, add 1
+		num = ~num + 1;
+		num = num & 0x000F;
 		num = num * -1;
 	}
 	return num;	
