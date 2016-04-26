@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     int done = read_execute_command(cpu);
     while (!done) {
         done = read_execute_command(cpu);
-	printf("%s", prompt);
+	  printf("%s", prompt);
     }
     return 0;
 }
@@ -180,8 +180,8 @@ void dump_registers(CPU *cpu) {
 }
 
 int read_execute_command(CPU *cpu) {
-// Buffer to read next command line into
-#define CMD_LINE_LEN 80
+    // Buffer to read next command line into
+    #define CMD_LINE_LEN 80
     char cmd_line[CMD_LINE_LEN];
     char *read_success;     // NULL if reading in a line fails.
     int nbr_cycles;     // Number of instruction cycles to execute

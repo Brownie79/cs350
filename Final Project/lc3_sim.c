@@ -15,11 +15,10 @@
 		Word reg[NREG];		//registers array
 		Address PC; 		//program counter
 		Word IR;			//Instruction registers
-		int running;		//running=1 iff CPU executing instr
-		int instr_sign;		//sign of the instruction
-		int opcode;			
-		int reg_R;
-		int addr_MM;
+		Word running;		//running=1 iff CPU executing instr
+		Word opcode;			
+		Word reg_R;			//what is this???
+		Word addr_MM;		//what is this??
 		char cond_code;
 	} CPU;
 	
@@ -40,18 +39,79 @@
 	Word getOffset9(Word val);
 	Word getImmediate5(Word val);
 	Word getOffset11(Word val);
+	Word getOffset6(Word val);
+	int read_command(CPU *cpu);
 	
 int main(int argc, char *argv[]){
 	printf("LC3 Simulator Final Project pt 2\n");
 	printf("Devanshu Bharel\n");
-	
 	CPU cpu_value, *cpu = &cpu_value;
 	initalize_CPU(cpu);
-	
 	initalize_memory(argc,argv, cpu);
+	
+	char *prompt = ">";
+    printf("\nBeginning execution; Hit [ENTER] to continue\n%s", prompt);
+    
+    int done = read_command(cpu);
+    while (!done) { //doesn't do anything since read_command has it's own loop
+        done = read_command(cpu);
+	  	printf("%s", prompt);
+    }
 	
 	return 0;
 }
+
+int read_command(CPU *cpu) {
+	// Buffer to read next command line into
+	#define CMD_LINE_LEN 80
+	char cmd_line[CMD_LINE_LEN];
+	char *read_success;     // NULL if reading in a line fails.
+	int nbr_cycles;     	// Number of instruction cycles to execute
+	char cmd_char;      	// Command 'q', 'h', '?', 'd', or '\n'
+	int done = 0;       	// Should simulator stop?
+	int words_read;
+	char *prompt = ">";
+
+	read_success = fgets(cmd_line, CMD_LINE_LEN, stdin);
+
+	while (read_success != NULL && !done) {
+		words_read = sscanf(cmd_line, "%d", &nbr_cycles);
+		if (words_read==1){
+			if(nbr_cycles > 100)
+				nbr_cycles = 100; 
+							
+			printf("Executing %d cycles!\n", nbr_cycles);
+		} else {
+			words_read = sscanf(cmd_line,"%c",&cmd_char);
+			if(cmd_char == '\n'){
+				nbr_cycles = 1;
+				printf("Executing 1 cycle!\n");
+			} else {
+				printf("Command char '%c' read\n",cmd_char);
+				switch(cmd_char){
+					case '?':
+					case 'h':
+						printf("h for help\nd for cpu and memory dump\nq to quit\n");
+						break;
+					case 'd':
+						printf("Dumping CPU and Memory!\n");
+						//todo
+						break;
+					case 'q':
+						printf("Hit 'ENTER' to exit program\n");
+						done = 1;
+						break;
+					default:
+						printf("Type h for help~\n");
+				}	
+			}			
+		}
+		printf("%s",prompt);	read_success = fgets(cmd_line, CMD_LINE_LEN, stdin);    
+    }
+
+    return done;
+}
+
 
 void initalize_CPU(CPU *cpu){
 	(*cpu).IR = 0;
@@ -65,8 +125,8 @@ void initalize_CPU(CPU *cpu){
 	(*cpu).addr_MM=0;
 	(*cpu).cond_code = 'Z';
 	
-	printf("\n Inital CPU:\n");
-	dump_cpu(cpu);
+	//printf("\n Inital CPU:\n");
+	//dump_cpu(cpu);
 	printf("\n");
 }
 
@@ -102,7 +162,7 @@ void initalize_memory(int argc, char *argv[], CPU *cpu){
 	}//end while
 	(*cpu).PC = orig;
 		
-	dump_memory(cpu);
+	//dump_memory(cpu);
 }
 
 FILE *get_datafile(int argc,char *argv[]){
@@ -151,11 +211,10 @@ void printBinary(Word val){
 }
 
 void asm_printer(Word val, Address memAddr){
-	int op_code = get_bits(val,15,12);
-	int srcReg = 0;
-	int dstReg = 0;
-	int offset = 0;
-	int n,z,p = 0;
+	Word op_code = get_bits(val,15,12);
+	Word n,z,p = 0;
+	//weird bug that won't let me redefine vars in cases
+	Word dstReg,srcReg,offset,immediateVal, src1, src2,immediate5,baseR,vector;
 	
 	switch(op_code){
 		case 0x0: //BR or NOP //done
@@ -184,7 +243,7 @@ void asm_printer(Word val, Address memAddr){
 			srcReg = get_bits(val,8,6);
 			printf("R%d, R%d, ", dstReg, srcReg);
 			if(get_nBit(val,5) == 1){
-				Word immediateVal = getImmediate5(val);
+				immediateVal = getImmediate5(val);
 				printf("%d", immediateVal);
 			} else {
 				printf("R%d", get_bits(val,2,0));
@@ -209,24 +268,45 @@ void asm_printer(Word val, Address memAddr){
 				Address newAddr = memAddr + offset + 1; //should wrap around if exceeds 65535?
 				printf("JSR M[0x%x]",newAddr);
 			} else { //JSRR 000 REG 000000
-				Word reg = get_bits(val,8,6);
-				printf("JSRR R%d",reg);
+				dstReg = get_bits(val,8,6);
+				printf("JSRR R%d",dstReg);
 			}			
 			break;
 		case 0x5: //AND or AND
 			printf("AND ");
+			dstReg = get_bits(val, 11,9);
+			src1 = get_bits(val, 8,6);
+			if(get_nBit(val,5) == 0){
+				src2 = get_bits(val, 2, 0);
+				printf("R%d, R%d, R%d ", dstReg, src1, src2);
+			} else {
+				immediate5 = getImmediate5(val);
+				printf("R%d, R%d, 0x%hx ", dstReg, src1, immediate5);
+			}
 			break;		
-		case 0x6: //LDR
+		case 0x6: //LDR //maybe show new memaddr? //done
 			printf("LDR ");
+			dstReg = get_bits(val,11,9);
+			baseR = get_bits(val,8,6);
+			offset = getOffset6(val);
+			printf("R%d, R%d, %d",dstReg,baseR,offset);
 			break;
-		case 0x7: //STR
+		case 0x7: //STR //done
 			printf("STR ");
+			srcReg = get_bits(val,11,9);
+			baseR = get_bits(val,8,6);
+			offset = getOffset6(val);
+			printf("R%d, R%d, %d",srcReg, baseR, offset);
 			break;
-		case 0x8: //RTI
-			printf("RTI ");
+		case 0x8: //RTI //done
+			printf("RTI not to be implemented. ");
+			//return from interrupt //don't have to implement
 			break;
-		case 0x9: //NOT
+		case 0x9: //NOT //done
 			printf("NOT ");
+			dstReg = get_bits(val,11,9);
+			srcReg = get_bits(val,8,6);
+			printf("R%d, R%d", dstReg, srcReg);
 			break;
 		case 0xA: //LDI //done
 			printf("LDI ");
@@ -254,6 +334,26 @@ void asm_printer(Word val, Address memAddr){
 			break;
 		case 0xF: //TRAP 
 			printf("TRAP ");
+			vector = get_bits(val,7,0);
+			switch(vector){
+				case 0x20:
+					printf("x20 - GETC - Read character from keyboard into R0");
+					break;
+				case 0x21:
+					printf("x21 - OUT Print character in R0");
+					break;
+				case 0x22:
+					printf("x22 - PUTS Print string of ASCII in chars starting at location pointed to by R0");
+					break;
+				case 0x23:
+					printf("x23 - IN Read character, but print prompt first");
+					break;
+				case 0x25:
+					printf("x25 - HALT Halts execution");
+					break;
+				default:
+					printf("Trap Vector not found");
+			}
 			break;
 		default:
 			printf("Not A Valid Fuction ");
@@ -261,34 +361,49 @@ void asm_printer(Word val, Address memAddr){
 }
 
 Word getOffset11(Word val){
-	Word num = val & 0x07FF;
+	Word mask = 0x7FF;
+	Word num = val & mask;
 	if(get_nBit(val,10) == 1) { 
 		//negate, add 1
 		num = ~num + 1;
-		num = num & 0x07FF;
+		num = num & mask;
 		num = num * -1;
 	}
 	return num;
 }
 
 Word getOffset9(Word val){
-	Word num = val & 0x01FF; 
+	Word mask = 0x1FF;
+	Word num = val & mask; 
 	if(get_nBit(val,8) == 1) { 
 		//negate, add 1
 		num = ~num + 1;
-		num = num & 0x01FF;
+		num = num & mask;
+		num = num * -1;
+	}
+	return num;	
+}
+
+Word getOffset6(Word val){
+	Word mask = 0x3F;
+	Word num = val & mask; 
+	if(get_nBit(val,5) == 1) { 
+		//negate, add 1
+		num = ~num + 1;
+		num = num & mask;
 		num = num * -1;
 	}
 	return num;	
 }
 
 Word getImmediate5(Word val){
-	Word num = val & 0x001F;
+	Word mask = 0x1F;
+	Word num = val & mask;
 	//val will have 5 digits, 5th one being the negative identified
 	if(get_nBit(val,4) == 1) { //check if 8th bit (9th digit) is 1, if so, num is negative
 		//negate, add 1
 		num = ~num + 1;
-		num = num & 0x000F;
+		num = num & mask;
 		num = num * -1;
 	}
 	return num;	

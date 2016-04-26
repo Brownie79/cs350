@@ -1,0 +1,109 @@
+LC-3 Computer
+
+16 bit addr, 64k addr locations, 16 bit word
+2's complement ints
+R0-R7, 3bits to name a register
+3 condition code bits
+4 Bit Opcodes:
+	Data Movement: Load into Reg, or Store val from reg to memory
+	Calc/Operation: Math
+	Control/Branch/Jump: change PC so nxt instr is somewhere else
+
++PC Offset Commands:
+	PC Offset is in 2's complement form	(x1F8 = 1 1111 1000 = -8)		
+	4bit Opcode - 3 bit Reg - 9 bit PC offset(-256 to 255)
+	Effective addr of operand is PC + sign-ext 9 bit offset
+		-PC offset of 0 means next instr, -1 means THIS instr
+	Usually written: INSTR REG, Offset 
+-LD Load Instruction: 
+	Destination Reg <- M[PC + offset]
+	4 bit Opcode(0010) - 3 bit Reg (destination) - 9 bit PC offset
+-ST Store Instruction: 	
+	M[PC + Offset] <- Src Reg
+	0011 - Src Reg - PC Offset
+-LEA Load Effective Address: 
+	Dest Reg <- PC + offset (not M[PC+offset]) (doesn't access actual value)
+	1110 - Dst Reg - PC Offset 9
+	
+	
++Base Offset:	
+	Base Reg contains a 16bit addr loc. It can be any addr.
+	Add 6 bits of sign extended offset to the addr in base reg
+	Effect Addr = Base Reg + offset
+	Simply Written: INSTR, First Reg, Second Reg, Offset
+-LDR Load Using Base Register:
+	Dest Reg <- M[Base Reg + Offset]
+	0110 - Dst - Base - Offset6
+	0110 011 111 111000, with R7 = x320C and M[x3204] = 38
+	R3 <- M[R7 - 8] : R3 <- M[x320C -8] : R3 <- M[x3204] : R3 <-38
+-STR Store using Base Reg:
+	M[Base Reg + Offset] <- Src Reg
+	0111 - Src - Base - Offset6
+	
++Indirect Addressing Mode:
+	Uses a pointer to access any loc in memory
+	Addr stored in memory, Effective Addr = M[PC+offset] vs PC Addr: Addr = PC+offset
+
+-LDI Load Indirect
+	Destination Register <- M[M[PC+Offset]]
+	1010-Dst Reg-PCOffset9
+-STI Store Indirect
+	M[M[PC+offset]] <- Source Register
+	1011-Src-PC Offset9
+	
++Calculations
+NOT: 1001- Dst Reg- Src Reg- Int6
+
+ADD (Reg): 0001-Dst-Src-0-00-Src2
+ADD (Immediate): 0001-Dst-Src-1-Imm5
+
+AND (Reg): 0001-Dst-Src-0-00-Src2
+AND (Immediate): 0001-Dst-Src-1-Imm5
+
+Subtraction: X-Y = X + NOT Y + 1
+OR: X OR Y = NOT(NOT X AND NOT Y)
+
+Clearing Register: Reg <- Reg AND 0
+Copying Reg to another Reg: Dst <- Src ADD 0 , Dst <- Src AND Src, Dst <- Src AND FFFF
+	
++++Part 2+++
+JMP Jump (unconditional): PC <- Base Register
+	1100-000-Base-000000
+
+BR Branch(conditional):
+	Condition Codes: N(negative), Z(Zero), P(positive) Only one is "1" at a time. Set after each operation.
+	If (CC & IR[9:11]) =/= 000, then PC <- PC + offset
+	If Mask is 011, branch if CC is 010 or 001 (aka if Z or P) hence branch if >= 0
+	111 = always jump, 000 = never jump
+	0000-NZP-PCOffset9
+	
+TRAP (special functions):
+	1111-0000-trapVector8
+	First save the PC to a register (to return after TRAP executed)
+	x20: GETC: input character from keyboard into rightmost byte of R0 (and clear left byte)
+	x21: OUT: Output the character in the rightmost byte of R0 to the monitor
+	x22: PUTS: Display the null terminated string pointed to by R0
+	x23: IN: Like GETC but prints a message before reading the character
+	x25: HALT: Halt execution (Clears the CPU's running flag)
+	
+	
+	
+	
+	
+But if Temp L is 0010 0010 0001 0000 and leftbit is 9, won't the new temp be: 0000 0000 0001 0001 ? It'll get me 001 with the mask but only because the second set of 3 bits is the same as the first set.
+
+If for example the word was: 0001 001 010 1 00001 (ADD R1, R2, 1)
+then wouldn't finding the set of bits go like this if using only the right bit (left: 11, right 9):
+Word  : 0001 0010 1010 0001
+Temp L: 0010 1010 0001 0000 (val << leftPad (4))
+Temp R: 0000 0000 0001 0101 (temp >> rightBit(9))	
+Mask  : 0000 0000 0000 0111
+
+Which would end up with the value 101, equaling: 6 ?	
+	
+	
+	
+	
+	
+	
+	
